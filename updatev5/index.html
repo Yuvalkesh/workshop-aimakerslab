@@ -1,22 +1,953 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<title>Personal Brain Workshop — V5 (work in progress)</title>
-<style>
-body { font-family: -apple-system, sans-serif; max-width: 720px; margin: 80px auto; padding: 24px; background: #0a0a0a; color: #e5e5e5; line-height: 1.6; }
-h1 { color: #f59e0b; }
-.tag { background: #f59e0b; color: #0a0a0a; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; margin-bottom: 16px; }
-.note { background: #1a1a1a; border-right: 3px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 4px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Brain Workshop · V5 | AI Makers Lab</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-soft: #fafafa;
+      --bg-card: #f8f9fb;
+      --bg-terminal: #1a1a1a;
+      --accent: #f59e0b;
+      --accent-soft: rgba(245, 158, 11, 0.10);
+      --accent-border: rgba(245, 158, 11, 0.30);
+      --gold: #d97706;
+      --gold-soft: rgba(217, 119, 6, 0.10);
+      --blue: #2563eb;
+      --blue-soft: rgba(37, 99, 235, 0.10);
+      --blue-border: rgba(37, 99, 235, 0.25);
+      --purple: #7c3aed;
+      --purple-soft: rgba(124, 58, 237, 0.10);
+      --green: #10b981;
+      --green-soft: rgba(16, 185, 129, 0.10);
+      --green-border: rgba(16, 185, 129, 0.30);
+      --red: #dc2626;
+      --red-soft: rgba(220, 38, 38, 0.08);
+      --text: #111827;
+      --text-muted: #6b7280;
+      --text-light: #9ca3af;
+      --border: rgba(17, 24, 39, 0.08);
+      --border-strong: rgba(17, 24, 39, 0.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Heebo', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .slides-container { position: relative; width: 100vw; height: 100vh; }
+
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 40px;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+      pointer-events: none; text-align: center;
+      overflow-y: auto;
+    }
+    .slide.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+    .slide h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; line-height: 1.25; margin-bottom: 24px; color: var(--text); letter-spacing: -0.02em; }
+    .slide h2 { font-size: clamp(1.5rem, 3.5vw, 2.5rem); font-weight: 800; line-height: 1.35; margin-bottom: 20px; }
+    .slide p, .slide .body-text { font-size: clamp(1.05rem, 1.8vw, 1.4rem); line-height: 1.75; color: var(--text); max-width: 720px; }
+    .slide .subtitle { font-size: clamp(1rem, 1.6vw, 1.2rem); color: var(--text-muted); margin-top: 12px; }
+    .slide .lead { font-size: clamp(1.1rem, 2vw, 1.45rem); color: var(--text-muted); margin-top: 16px; max-width: 640px; }
+
+    .accent { color: var(--accent); }
+    .gold { color: var(--gold); }
+    .blue { color: var(--blue); }
+    .purple { color: var(--purple); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .muted { color: var(--text-muted); }
+    .big { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 900; letter-spacing: -0.02em; }
+    .huge { font-size: clamp(3rem, 7vw, 6rem); font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
+    code, .mono { font-family: 'IBM Plex Mono', monospace; }
+
+    .pill {
+      display: inline-block; padding: 6px 14px; border-radius: 999px;
+      font-size: 0.85rem; font-weight: 600; letter-spacing: 0.02em;
+      background: var(--accent-soft); color: var(--gold);
+      border: 1px solid var(--accent-border);
+    }
+    .pill.green { background: var(--green-soft); color: var(--green); border-color: var(--green-border); }
+    .pill.blue { background: var(--blue-soft); color: var(--blue); border-color: var(--blue-border); }
+
+    .slide-counter { position: fixed; bottom: 20px; left: 24px; font-size: 13px; color: var(--text-light); z-index: 100; font-variant-numeric: tabular-nums; font-family: 'IBM Plex Mono', monospace; }
+    .progress-bar { position: fixed; top: 0; right: 0; height: 3px; background: var(--accent); transition: width 0.3s ease; z-index: 100; }
+    .keyboard-hint { position: fixed; bottom: 20px; right: 24px; font-size: 12px; color: var(--text-light); z-index: 100; font-family: 'IBM Plex Mono', monospace; }
+
+    .brand { position: fixed; top: 24px; right: 28px; font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em; font-weight: 700; z-index: 100; }
+
+    /* CARDS */
+    .card-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 760px; margin-top: 24px; }
+    .card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; max-width: 920px; margin-top: 24px; }
+    .card {
+      padding: 24px 22px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; text-align: right;
+    }
+    .card.accent { background: var(--accent-soft); border-color: var(--accent-border); }
+    .card.green { background: var(--green-soft); border-color: var(--green-border); }
+    .card.blue { background: var(--blue-soft); border-color: var(--blue-border); }
+    .card .icon { font-size: 1.8rem; margin-bottom: 10px; display: block; }
+    .card h3 { font-size: clamp(1rem, 1.4vw, 1.15rem); font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .card p { font-size: clamp(0.85rem, 1.15vw, 0.95rem); color: var(--text-muted); line-height: 1.55; }
+
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent); color: white; font-weight: 800; font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    /* TERMINAL */
+    .terminal {
+      width: 100%; max-width: 720px; margin-top: 22px;
+      background: var(--bg-terminal); border: 1px solid #2a2a2a; border-radius: 14px;
+      text-align: left; direction: ltr; overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.10);
+    }
+    .terminal-header {
+      display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+      background: #222; border-bottom: 1px solid #2a2a2a;
+    }
+    .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .terminal-dot.red { background: #ff5f56; }
+    .terminal-dot.yellow { background: #ffbd2e; }
+    .terminal-dot.green { background: #27c93f; }
+    .terminal-title { font-size: 0.78rem; color: #888; margin-left: 8px; font-family: 'IBM Plex Mono', monospace; }
+    .terminal-body {
+      padding: 18px 22px; color: #e5e5e5;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: clamp(0.78rem, 1.1vw, 0.95rem);
+      line-height: 1.75;
+    }
+    .terminal-body .prompt { color: #f59e0b; font-weight: 600; }
+    .terminal-body .comment { color: #888; }
+    .terminal-body .keyword { color: #60a5fa; }
+    .terminal-body .string { color: #6ee7b7; }
+    .terminal-body .agent-name { color: #c4b5fd; font-weight: 700; }
+    .terminal-body .highlight { color: #fbbf24; font-weight: 600; }
+
+    /* COMPARE TABLE */
+    .compare {
+      width: 100%; max-width: 800px; margin-top: 22px;
+      border-collapse: separate; border-spacing: 0;
+      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+      background: var(--bg-card);
+    }
+    .compare th, .compare td {
+      padding: 14px 18px; text-align: right;
+      font-size: clamp(0.85rem, 1.2vw, 1rem); border-bottom: 1px solid var(--border);
+    }
+    .compare th { background: var(--bg-soft); font-weight: 700; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 0.02em; }
+    .compare tr:last-child td { border-bottom: none; }
+    .compare td.win { background: var(--green-soft); color: var(--green); font-weight: 700; }
+    .compare td.fail { color: var(--text-muted); }
+
+    /* TREE */
+    .tree {
+      width: 100%; max-width: 620px; margin-top: 22px; padding: 22px 26px;
+      background: var(--bg-terminal); border-radius: 14px; direction: ltr;
+      font-family: 'IBM Plex Mono', monospace; font-size: clamp(0.78rem, 1.1vw, 0.95rem);
+      line-height: 1.85; text-align: left; color: #e5e5e5;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.10);
+      white-space: pre;
+    }
+    .tree .folder { color: #fbbf24; font-weight: 600; }
+    .tree .file { color: #c4b5fd; }
+    .tree .comment { color: #6b7280; }
+
+    /* WIN MOMENT */
+    .win-banner {
+      max-width: 640px; width: 100%; padding: 36px 32px;
+      background: linear-gradient(135deg, var(--green-soft), var(--accent-soft));
+      border: 2px solid var(--green-border);
+      border-radius: 22px; margin-top: 16px;
+    }
+    .win-icon { font-size: 3rem; line-height: 1; margin-bottom: 12px; }
+    .win-banner h2 { color: var(--green); margin-bottom: 12px; }
+    .win-banner p { color: var(--text); }
+
+    /* CHECKLIST */
+    .checklist {
+      max-width: 580px; width: 100%; padding: 24px 28px; border-radius: 16px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      text-align: right; margin-top: 18px;
+    }
+    .check-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 0; font-size: clamp(1rem, 1.4vw, 1.15rem);
+      color: var(--text); border-bottom: 1px solid var(--border);
+    }
+    .check-item:last-child { border-bottom: none; }
+
+    /* INLINE CODE */
+    .inline-code {
+      display: inline-block; padding: 2px 10px; border-radius: 6px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.92em;
+      color: var(--text); direction: ltr;
+    }
+
+    /* TIME MARKER */
+    .time-marker {
+      display: inline-block; padding: 6px 16px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--gold);
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.9rem; font-weight: 600;
+      margin-bottom: 16px; letter-spacing: 0.02em;
+    }
+
+    /* BG GLOW */
+    .bg-glow { position: fixed; width: 500px; height: 500px; border-radius: 50%; filter: blur(140px); opacity: 0.12; pointer-events: none; z-index: -1; }
+    .bg-glow.tl { top: -120px; right: -120px; background: var(--accent); }
+    .bg-glow.br { bottom: -120px; left: -120px; background: var(--blue); }
+
+    /* HOUR HEADER */
+    .hour-header {
+      font-size: clamp(0.85rem, 1.1vw, 0.95rem);
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent); font-weight: 700; margin-bottom: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .slide { padding: 50px 20px; }
+      .card-grid-2, .card-grid-3 { grid-template-columns: 1fr; }
+      .compare { font-size: 0.85rem; }
+      .terminal-body { font-size: 0.72rem; padding: 14px 16px; }
+      .brand { right: 16px; top: 16px; font-size: 10px; }
+      .keyboard-hint, .slide-counter { font-size: 11px; }
+    }
+  </style>
 </head>
 <body>
-<span class="tag">V5 · WORK IN PROGRESS</span>
-<h1>🧠 Personal Brain Workshop</h1>
-<p>שעתיים. שני בלוקים. מוח שני שלך על המחשב, מגובה ל-GitHub, עם סקיל אחד שעובד.</p>
-<div class="note">
-<strong>סטטוס</strong>: התוכנית אושרה (שלב 1). תוכן השקופיות (שלב 2) בבנייה. הסדנה הנוכחית ממשיכה לפעול ב-<a href="/" style="color:#f59e0b;">/</a>.
-</div>
-<p>—<br>יובל קשתכר · AI Makers Lab · 2026</p>
+  <div class="bg-glow tl"></div>
+  <div class="bg-glow br"></div>
+  <div class="brand">AI MAKERS LAB</div>
+  <div class="progress-bar" id="progress"></div>
+  <div class="slide-counter" id="counter"></div>
+  <div class="keyboard-hint">← → לניווט</div>
+
+  <div class="slides-container" id="slides">
+
+    <!-- SLIDE 1: COVER -->
+    <div class="slide active" data-slide="1">
+      <span class="pill">PERSONAL BRAIN WORKSHOP · V5</span>
+      <h1 style="margin-top: 18px;">🧠 בנה את <span class="accent">המוח השני</span> שלך</h1>
+      <p class="lead">שעתיים. שני בלוקים. תצא עם מוח שני על המחשב שלך,<br>מגובה ל-GitHub, עם סקיל אחד שעובד בשבילך כל יום.</p>
+      <p style="margin-top: 36px; font-size: clamp(0.95rem, 1.4vw, 1.1rem); color: var(--text-muted);">
+        יובל קשתכר · יזם · מייסד AI Makers Lab
+      </p>
+    </div>
+
+    <!-- SLIDE 2: PROJECT CARD -->
+    <div class="slide" data-slide="2">
+      <h1>כרטיס הפרויקט שלך</h1>
+      <p class="subtitle">ב-2 שעות תצא עם 3 ניצחונות מתועדים</p>
+      <div class="card-grid-3">
+        <div class="card green">
+          <span class="icon">🟢</span>
+          <h3>דקה 60</h3>
+          <p>המוח שלך קיים. מגובה ל-GitHub.</p>
+        </div>
+        <div class="card accent">
+          <span class="icon">🟡</span>
+          <h3>דקה 95</h3>
+          <p>סוכן ראשון עונה לפרומפט שלך.</p>
+        </div>
+        <div class="card blue">
+          <span class="icon">🔵</span>
+          <h3>דקה 118</h3>
+          <p>סקיל ראשון מייצר output אמיתי.</p>
+        </div>
+      </div>
+      <p style="margin-top: 28px; font-size: 1.1rem; color: var(--text-muted);">
+        כל ניצחון = צילום מסך לקבוצת הוואטסאפ.
+      </p>
+    </div>
+
+    <!-- SLIDE 3: WIN RITUAL -->
+    <div class="slide" data-slide="3">
+      <h1>כלל הוואטסאפ</h1>
+      <p class="big accent" style="margin-top: 8px;">אני לא ממשיך עד 100%.</p>
+      <div class="checklist" style="margin-top: 30px;">
+        <div class="check-item">📸 בכל Win Moment — צילום מסך לקבוצה</div>
+        <div class="check-item">🚫 לא צילום? אני עוצר</div>
+        <div class="check-item">💬 עזרה 1-on-1 בוואטסאפ אחרי</div>
+        <div class="check-item">🚀 ככה כולם זזים יחד</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: 3 AI INTERFACES -->
+    <div class="slide" data-slide="4">
+      <p class="hour-header">שעה 1 · בניית המוח</p>
+      <h1>3 הממשקים של AI</h1>
+      <table class="compare">
+        <thead>
+          <tr>
+            <th></th>
+            <th>ChatGPT</th>
+            <th>Claude Desktop</th>
+            <th>Claude Code ✅</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>איפה</strong></td>
+            <td>אתר</td>
+            <td>אפליקציה</td>
+            <td class="win">טרמינל</td>
+          </tr>
+          <tr>
+            <td><strong>יודע אותך?</strong></td>
+            <td class="fail">לא</td>
+            <td class="fail">מעט</td>
+            <td class="win">קורא קבצים שלך</td>
+          </tr>
+          <tr>
+            <td><strong>נוגע במחשב?</strong></td>
+            <td class="fail">לא</td>
+            <td class="fail">לא</td>
+            <td class="win">יוצר ועורך קבצים</td>
+          </tr>
+          <tr>
+            <td><strong>גיבוי?</strong></td>
+            <td class="fail">אין</td>
+            <td class="fail">אין</td>
+            <td class="win">GitHub</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SLIDE 5: WHY CLAUDE CODE WINS -->
+    <div class="slide" data-slide="5">
+      <h1>למה Claude Code מנצח</h1>
+      <p class="subtitle">4 דברים שאף ממשק אחר לא נותן</p>
+      <div class="card-grid-2" style="max-width: 760px;">
+        <div class="card">
+          <span class="icon">🗂️</span>
+          <h3>גישה לקבצים שלך</h3>
+          <p>קורא, כותב, מארגן.</p>
+        </div>
+        <div class="card">
+          <span class="icon">💾</span>
+          <h3>Persistence</h3>
+          <p>הזיכרון שלו = קבצים אצלך, לא בענן.</p>
+        </div>
+        <div class="card">
+          <span class="icon">🔌</span>
+          <h3>MCP</h3>
+          <p>מתחבר לכל כלי שיש לו ממשק.</p>
+        </div>
+        <div class="card">
+          <span class="icon">📦</span>
+          <h3>Git</h3>
+          <p>כל שינוי מתועד, אפשר לחזור אחורה.</p>
+        </div>
+      </div>
+      <p style="margin-top: 28px; font-size: 1.2rem; font-weight: 700;">
+        → המחשב שלך הופך ל-<span class="accent">AI שמכיר אותך</span>
+      </p>
+    </div>
+
+    <!-- SLIDE 6: WHAT IS MD FILE -->
+    <div class="slide" data-slide="6">
+      <h1>מה זה קובץ MD?</h1>
+      <p class="big" style="margin-top: 4px;">Word בלי עיצוב.</p>
+      <div class="terminal" style="max-width: 580px;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">my-note.md</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="keyword"># כותרת ראשית</span></div>
+          <div><span class="keyword">## כותרת משנית</span></div>
+          <div style="margin-top: 12px;">זה טקסט רגיל. <span class="highlight">**מודגש**</span>. <span class="comment">*נטוי*</span>.</div>
+          <div style="margin-top: 12px;"><span class="string">- רשימה</span></div>
+          <div><span class="string">- עוד אחד</span></div>
+        </div>
+      </div>
+      <p style="margin-top: 28px; font-size: 1.15rem;">
+        AI קורא את זה <strong>כמו שאתה קורא את זה</strong>.
+      </p>
+    </div>
+
+    <!-- SLIDE 7: WHY AGENTS = MD -->
+    <div class="slide" data-slide="7">
+      <h1>למה סוכן = אוסף קבצי MD</h1>
+      <p class="lead">סוכן זה לא תוכנה. סוכן זה הוראות.<br>קובץ MD שיובל קורא לפני כל פגישה.</p>
+      <div class="terminal" style="max-width: 600px; margin-top: 24px;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">agents/ken.md</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="comment">---</span></div>
+          <div><span class="keyword">type:</span> agent</div>
+          <div><span class="keyword">name:</span> Ken</div>
+          <div><span class="keyword">role:</span> McKinsey · Reality Anchor</div>
+          <div><span class="keyword">voice:</span> data-driven, blunt</div>
+          <div><span class="comment">---</span></div>
+          <div style="margin-top: 8px;"><span class="agent-name"># Ken</span></div>
+          <div style="margin-top: 4px;">Reality anchor. Open with data landscape, time, benchmark...</div>
+        </div>
+      </div>
+      <p style="margin-top: 24px; font-size: 1.05rem; color: var(--text-muted);">זהו. זה כל הסוכן.</p>
+    </div>
+
+    <!-- SLIDE 8: BRAIN ARCHITECTURE -->
+    <div class="slide" data-slide="8">
+      <h1>הארכיטקטורה של המוח</h1>
+      <p class="subtitle">8 תיקיות + 3 קבצים</p>
+      <div class="tree"><span class="folder">your-brain/</span>
+├── <span class="file">CLAUDE.md</span>          <span class="comment">← ה-schema</span>
+├── <span class="file">index.md</span>           <span class="comment">← מתחדש אוטומטית</span>
+├── <span class="file">log.md</span>             <span class="comment">← יומן append-only</span>
+│
+├── <span class="folder">core/</span>              <span class="comment">← מי אתה</span>
+│   ├── <span class="file">soul.md</span>
+│   ├── <span class="file">memory.md</span>
+│   └── <span class="file">icp.md</span>
+│
+├── <span class="folder">agents/</span>            <span class="comment">← אנשים בצוות</span>
+├── <span class="folder">skills/</span>            <span class="comment">← פעולות חוזרות</span>
+├── <span class="folder">wiki/</span>              <span class="comment">← הידע שלך</span>
+├── <span class="folder">raw/</span>               <span class="comment">← inbox</span>
+├── <span class="folder">outputs/</span>           <span class="comment">← ריצות מתוארכות</span>
+└── <span class="folder">templates/</span>         <span class="comment">← תבניות</span></div>
+    </div>
+
+    <!-- SLIDE 9: CLAUDE.MD SCHEMA -->
+    <div class="slide" data-slide="9">
+      <h1>CLAUDE.md — חוקי המשחק</h1>
+      <p class="subtitle">7 סוגי entities. כל אחד = קובץ.</p>
+      <table class="compare" style="max-width: 720px;">
+        <thead><tr><th>סוג</th><th>מה זה</th><th>איפה</th></tr></thead>
+        <tbody>
+          <tr><td><strong>agent</strong></td><td>אדם בצוות</td><td><code class="mono">agents/&lt;name&gt;.md</code></td></tr>
+          <tr><td><strong>skill</strong></td><td>פעולה חוזרת</td><td><code class="mono">skills/&lt;name&gt;/</code></td></tr>
+          <tr><td><strong>output</strong></td><td>תוצאת ריצה</td><td><code class="mono">outputs/YYYY-MM-DD-...</code></td></tr>
+          <tr><td><strong>customer</strong></td><td>לקוח</td><td><code class="mono">wiki/customers/...</code></td></tr>
+          <tr><td><strong>project</strong></td><td>פרויקט</td><td><code class="mono">wiki/projects/...</code></td></tr>
+          <tr><td><strong>decision</strong></td><td>החלטה</td><td><code class="mono">wiki/decisions/...</code></td></tr>
+          <tr><td><strong>lesson</strong></td><td>כלל שלמדת</td><td><code class="mono">wiki/lessons/...</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SLIDE 10: CLONE TEMPLATE -->
+    <div class="slide" data-slide="10">
+      <span class="time-marker">⏱ דקה 22-27 · LIVE</span>
+      <h1>Clone The Template</h1>
+      <div class="terminal" style="max-width: 680px;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">terminal</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="prompt">$</span> git clone https://github.com/aimakerslab/personal-brain-template my-brain</div>
+          <div><span class="prompt">$</span> cd my-brain</div>
+          <div style="margin-top: 14px;"><span class="comment"># פותחים ב-Obsidian:</span></div>
+          <div><span class="comment"># Open folder as vault → בוחרים את התיקייה</span></div>
+          <div style="margin-top: 14px;"><span class="comment"># פותחים Cloud Code:</span></div>
+          <div><span class="prompt">$</span> claude</div>
+        </div>
+      </div>
+      <p style="margin-top: 24px; font-size: 1.1rem; color: var(--text-muted);">
+        ✋ הצביעו כשגם Obsidian וגם Cloud Code פתוחים
+      </p>
+    </div>
+
+    <!-- SLIDE 11: SOUL -->
+    <div class="slide" data-slide="11">
+      <span class="time-marker">⏱ דקה 27-33</span>
+      <h1>core/soul.md — <span class="accent">עליך</span></h1>
+      <p class="subtitle">לפני שיוצרים סוכן, מספרים למוח מי אתה</p>
+      <div class="terminal" style="max-width: 600px;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">core/soul.md</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="comment"># Soul: &lt;your name&gt;</span></div>
+          <div style="margin-top: 10px;"><span class="keyword">## מי אני</span></div>
+          <div><span class="comment">2-3 משפטים</span></div>
+          <div style="margin-top: 8px;"><span class="keyword">## מה אני עושה</span></div>
+          <div><span class="comment">5 בולטים</span></div>
+          <div style="margin-top: 8px;"><span class="keyword">## איך אני מתקשר</span></div>
+          <div><span class="comment">קצב, פורמליות, אנרגיה</span></div>
+          <div style="margin-top: 8px;"><span class="keyword">## מה אני אף פעם לא עושה</span></div>
+          <div><span class="comment">גבולות</span></div>
+        </div>
+      </div>
+      <p style="margin-top: 22px; font-size: 1rem; color: var(--text-muted);">5 משפטים מספיקים. לא לעצור פה שעה.</p>
+    </div>
+
+    <!-- SLIDE 12: MEMORY -->
+    <div class="slide" data-slide="12">
+      <span class="time-marker">⏱ דקה 33-37</span>
+      <h1>core/memory.md — <span class="accent">מצב נוכחי</span></h1>
+      <p class="subtitle">תמונת מצב — איפה אתה עכשיו. ישתנה כל שבוע.</p>
+      <div class="card-grid-2" style="max-width: 700px;">
+        <div class="card"><h3>📊 העסק שלי</h3><p>שלב · הכנסה · לקוחות פעילים</p></div>
+        <div class="card"><h3>🎯 פרויקטים פעילים</h3><p>קישורים ל-wiki/projects</p></div>
+        <div class="card"><h3>⚡ אתגר עכשווי</h3><p>משפט אחד</p></div>
+        <div class="card"><h3>🚀 מטרה ל-30 ימים</h3><p>יעד מדיד</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 13: ICP -->
+    <div class="slide" data-slide="13">
+      <span class="time-marker">⏱ דקה 37-40</span>
+      <h1>core/icp.md — <span class="accent">מי הלקוח שלך</span></h1>
+      <p class="lead">5 דקות עכשיו = שעות חיסכון בהמשך.<br>כל סוכן שיווק שתבנה — קורא את הקובץ הזה.</p>
+      <div class="card-grid-3" style="max-width: 820px;">
+        <div class="card"><h3>👤 מי</h3><p>תפקיד · גודל עסק · תעשייה</p></div>
+        <div class="card"><h3>😣 מה הוא שונא</h3><p>3 כאבים</p></div>
+        <div class="card"><h3>🎯 מה הוא רוצה</h3><p>3 רצונות</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 14: SECURITY -->
+    <div class="slide" data-slide="14">
+      <span class="time-marker">⏱ דקה 40-44</span>
+      <h1>גבולות הנתונים שלך 🔒</h1>
+      <p class="subtitle">מה הולך לאן</p>
+      <div class="terminal" style="max-width: 720px; direction: rtl; text-align: right;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">data flow</div>
+        </div>
+        <div class="terminal-body" style="direction: rtl; text-align: right;">
+          <div>📁 <span class="agent-name">המוח שלך</span> → <span class="highlight">המחשב שלך בלבד</span></div>
+          <div style="margin-top: 8px;">💬 פרומפט + הוראה → <span class="highlight">Anthropic (Claude API)</span></div>
+          <div style="margin-top: 8px;">🔌 Gmail / Calendar → <span class="highlight">Composio</span> → Google</div>
+          <div style="margin-top: 8px;">📦 Push לגיבוי → <span class="highlight">GitHub (private)</span></div>
+        </div>
+      </div>
+      <div class="checklist" style="margin-top: 22px;">
+        <div class="check-item">⚠️ אל תכניס סיסמאות / מספרי כרטיס אשראי לקבצים</div>
+        <div class="check-item">🔐 GitHub repo = private עד שאתה בטוח</div>
+        <div class="check-item">🎯 Composio = רק חיבורים שאתה צריך</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 15: COMPOSIO -->
+    <div class="slide" data-slide="15">
+      <span class="time-marker">⏱ דקה 44-50 · LIVE</span>
+      <h1>Composio Setup</h1>
+      <p class="subtitle">Gmail + Calendar · 3 שלבים · 5 דקות</p>
+      <div class="card-grid-3" style="max-width: 880px;">
+        <div class="card">
+          <span class="step-num">1</span>
+          <h3>Account</h3>
+          <p><code class="mono">composio.dev</code> → Sign Up עם Google</p>
+        </div>
+        <div class="card">
+          <span class="step-num">2</span>
+          <h3>חיבורים</h3>
+          <p>Apps → Gmail → Connect<br>Apps → Calendar → Connect</p>
+        </div>
+        <div class="card">
+          <span class="step-num">3</span>
+          <h3>API Key</h3>
+          <p>Settings → API Keys → Create<br>שמרו את המפתח! ⚠️</p>
+        </div>
+      </div>
+      <p style="margin-top: 22px; font-size: 1.05rem;">
+        ניסיון: <span class="inline-code">"מה יש לי היום ביומן?"</span>
+      </p>
+    </div>
+
+    <!-- SLIDE 16: GITHUB -->
+    <div class="slide" data-slide="16">
+      <span class="time-marker">⏱ דקה 50-56 · LIVE</span>
+      <h1>Push ל-GitHub 📦</h1>
+      <p class="lead">פקודה אחת. Cloud Code עושה הכל.</p>
+      <div class="terminal" style="max-width: 720px;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">claude code</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="prompt">&gt;</span> Create a private GitHub repo named</div>
+          <div>  <span class="string">"&lt;my-name&gt;-brain"</span> and push everything</div>
+          <div>  in this folder to it.</div>
+          <div style="margin-top: 12px;"><span class="comment"># Cloud Code יבצע:</span></div>
+          <div><span class="comment">  ✓ git init</span></div>
+          <div><span class="comment">  ✓ git add .</span></div>
+          <div><span class="comment">  ✓ git commit -m "initial brain commit"</span></div>
+          <div><span class="comment">  ✓ gh repo create --private</span></div>
+          <div><span class="comment">  ✓ git push</span></div>
+        </div>
+      </div>
+      <p style="margin-top: 20px; font-size: 1rem;">
+        ✅ גיבוי · ✅ Version control · ✅ נגיש מכל מחשב · ✅ rollback
+      </p>
+    </div>
+
+    <!-- SLIDE 17: PLAN MODE -->
+    <div class="slide" data-slide="17">
+      <span class="time-marker">⏱ דקה 56-58</span>
+      <h1>Plan Mode 🧭</h1>
+      <p class="lead">חוסך טוקנים. חוסך טעויות.</p>
+      <div class="card-grid-2" style="max-width: 760px;">
+        <div class="card green">
+          <span class="icon">💰</span>
+          <h3>חיסכון 70%</h3>
+          <p>טוקנים בממוצע</p>
+        </div>
+        <div class="card accent">
+          <span class="icon">🛡️</span>
+          <h3>בטיחות</h3>
+          <p>מונע פעולות לא רצויות</p>
+        </div>
+        <div class="card blue">
+          <span class="icon">🔍</span>
+          <h3>שקיפות</h3>
+          <p>אתה רואה מה Cloud חושב</p>
+        </div>
+        <div class="card">
+          <span class="icon">⚡</span>
+          <h3>איך</h3>
+          <p>Tab → Plan Mode → תיאור משימה</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 18: WIN MOMENT 1 -->
+    <div class="slide" data-slide="18">
+      <div class="win-banner">
+        <div class="win-icon">🟢</div>
+        <h2>Win Moment 1 · דקה 60</h2>
+        <p style="font-size: 1.3rem; font-weight: 700;">צילום מסך של ה-GitHub repo שלכם → לקבוצה</p>
+      </div>
+      <div class="checklist" style="margin-top: 26px;">
+        <div class="check-item">✅ מוח עם 8 תיקיות + schema</div>
+        <div class="check-item">✅ soul + memory + icp עליכם</div>
+        <div class="check-item">✅ Composio מחובר (Gmail + Calendar)</div>
+        <div class="check-item">✅ הכל מגובה ב-GitHub</div>
+      </div>
+      <p style="margin-top: 24px; font-size: 1.05rem; color: var(--text-muted);">
+        אני לא ממשיך עד 100%. הפסקה של 2 דקות.
+      </p>
+    </div>
+
+    <!-- SLIDE 19: HOUR 2 RECAP -->
+    <div class="slide" data-slide="19">
+      <p class="hour-header">שעה 2 · בניית סקילים</p>
+      <h1>עכשיו מכניסים <span class="accent">אנשים</span> למוח</h1>
+      <div class="card-grid-3" style="max-width: 880px;">
+        <div class="card accent">
+          <span class="icon">👤</span>
+          <h3>סוכן ראשון</h3>
+          <p>בתחום שלך</p>
+        </div>
+        <div class="card blue">
+          <span class="icon">⚙️</span>
+          <h3>סקיל ראשון</h3>
+          <p>שמייצר output אמיתי</p>
+        </div>
+        <div class="card green">
+          <span class="icon">🚀</span>
+          <h3>ריצה חיה</h3>
+          <p>הסקיל עובד עכשיו</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 20: AGENT VS SKILL -->
+    <div class="slide" data-slide="20">
+      <h1>Agent vs Skill — סוף הבלבול</h1>
+      <table class="compare" style="max-width: 720px;">
+        <thead><tr><th></th><th>Agent 👤</th><th>Skill 🔧</th></tr></thead>
+        <tbody>
+          <tr><td><strong>מה זה</strong></td><td>אדם בצוות</td><td>פעולה חוזרת</td></tr>
+          <tr><td><strong>איפה</strong></td><td>קובץ אחד</td><td>תיקייה עם stages</td></tr>
+          <tr><td><strong>אופי?</strong></td><td>כן (soul + voice)</td><td>לא — נוהל</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 22px; font-size: 1.1rem; color: var(--text);">
+        <strong>שניהם מפעילים זה את זה</strong> · Agent יכול להפעיל Skill, Skill יכול להפעיל Agent
+      </p>
+      <p style="margin-top: 14px; font-size: 1.05rem; color: var(--text-muted);">
+        Agent = אדם · Skill = ספר נהלים · שניהם בקבצי MD
+      </p>
+    </div>
+
+    <!-- SLIDE 21: 6 USE CASE CARDS -->
+    <div class="slide" data-slide="21">
+      <h1>6 כרטיסי שימוש</h1>
+      <p class="subtitle">בחר אחד. הסקיל הראשון שלך יהיה בתחום הזה.</p>
+      <div class="card-grid-3" style="max-width: 980px;">
+        <div class="card"><span class="icon">📝</span><h3>Content</h3><p>יוצרי תוכן · content-pipeline</p></div>
+        <div class="card"><span class="icon">📊</span><h3>Data</h3><p>BI · weekly-report</p></div>
+        <div class="card"><span class="icon">📣</span><h3>Campaign</h3><p>שיווק · campaign-brief</p></div>
+        <div class="card"><span class="icon">🤝</span><h3>CRM</h3><p>מכירות · customer-followup</p></div>
+        <div class="card"><span class="icon">🧠</span><h3>Knowledge</h3><p>יועצים · ingest-article</p></div>
+        <div class="card"><span class="icon">🌅</span><h3>Life OS</h3><p>יזמים · morning-brief</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 22: CHOOSE -->
+    <div class="slide" data-slide="22">
+      <h1>בחרת? עכשיו <span class="accent">בונים יחד</span></h1>
+      <div class="checklist" style="margin-top: 24px;">
+        <div class="check-item"><span class="time-marker" style="margin: 0 0 0 8px;">74-90</span>בונים את הסוכן הראשון שלך</div>
+        <div class="check-item"><span class="time-marker" style="margin: 0 0 0 8px;">90-95</span>★ Win Moment 2 — סוכן עונה</div>
+        <div class="check-item"><span class="time-marker" style="margin: 0 0 0 8px;">95-115</span>בונים סקיל ראשון</div>
+        <div class="check-item"><span class="time-marker" style="margin: 0 0 0 8px;">115-118</span>★ Win Moment 3 — output</div>
+      </div>
+      <p style="margin-top: 22px; font-size: 1.1rem; font-weight: 600;">
+        אני מוביל. אתם מקלידים יחד.
+      </p>
+    </div>
+
+    <!-- SLIDE 23: LIVE BUILD AGENT -->
+    <div class="slide" data-slide="23">
+      <span class="time-marker">⏱ דקה 74-90 · LIVE</span>
+      <h1>Live Build: הסוכן הראשון שלך</h1>
+      <div class="terminal" style="max-width: 700px;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">Plan Mode</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="prompt">&gt;</span> I want to build an agent in agents/.</div>
+          <div>  - Name: <span class="string">&lt;from card&gt;</span></div>
+          <div>  - Role: <span class="string">&lt;one line&gt;</span></div>
+          <div>  - Soul: <span class="string">&lt;character traits&gt;</span></div>
+          <div>  - Voice: <span class="string">&lt;how they communicate&gt;</span></div>
+          <div style="margin-top: 8px;">  Read core/soul.md, memory.md, icp.md</div>
+          <div>  before creating. <span class="highlight">Plan first.</span></div>
+        </div>
+      </div>
+      <p style="margin-top: 20px; font-size: 1rem; color: var(--text-muted);">
+        Cloud Code יציג תוכנית → Approve → ייווצר agents/&lt;name&gt;.md
+      </p>
+    </div>
+
+    <!-- SLIDE 24: WIN 2 -->
+    <div class="slide" data-slide="24">
+      <div class="win-banner" style="background: linear-gradient(135deg, var(--accent-soft), var(--gold-soft));">
+        <div class="win-icon">🟡</div>
+        <h2 style="color: var(--gold);">Win Moment 2 · דקה 95</h2>
+        <p style="font-size: 1.3rem; font-weight: 700;">הסוכן שלכם עונה לפרומפט הראשון</p>
+      </div>
+      <p style="margin-top: 28px; font-size: 1.05rem;">לפי הכרטיס שבחרתם:</p>
+      <div class="checklist">
+        <div class="check-item">📝 Content: "מה הקול של העסק שלי?"</div>
+        <div class="check-item">📊 Data: "מה ה-KPIs שאני צריך לעקוב אחריהם?"</div>
+        <div class="check-item">🤝 CRM: "מי הלקוח האחרון שצריך מענה?"</div>
+        <div class="check-item">🌅 Life OS: "מה אני צריך לעשות היום?"</div>
+      </div>
+      <p style="margin-top: 18px; font-size: 1.1rem; font-weight: 700;">📸 צילום מסך → קבוצה</p>
+    </div>
+
+    <!-- SLIDE 25: OUTPUT FILE PATTERN -->
+    <div class="slide" data-slide="25">
+      <span class="pill">⭐ הסוד הכי חזק</span>
+      <h1 style="margin-top: 14px;">Output File Timestamp Pattern</h1>
+      <p class="lead">כל ריצת skill = קובץ output מתוארך</p>
+      <div class="tree" style="max-width: 580px;"><span class="folder">outputs/</span>
+├── <span class="file">2026-04-30-morning-brief.md</span>
+├── <span class="file">2026-04-30-customer-followup.md</span>
+├── <span class="file">2026-04-29-weekly-report.md</span>
+└── <span class="file">2026-04-29-content-pipeline.md</span></div>
+      <div class="card-grid-2" style="max-width: 720px; margin-top: 24px;">
+        <div class="card"><h3>📅 היסטוריה</h3><p>מה עשה הסקיל מתי</p></div>
+        <div class="card"><h3>🧠 לומד מעצמו</h3><p>קורא outputs קודמים</p></div>
+        <div class="card"><h3>📈 patterns</h3><p>"כל יום שני 8 משימות" → אופטימיזציה</p></div>
+        <div class="card"><h3>📤 שיתוף קל</h3><p>קובץ אחד, לא שיחה</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 26: BUILD SKILL -->
+    <div class="slide" data-slide="26">
+      <span class="time-marker">⏱ דקה 100-115 · LIVE</span>
+      <h1>Live Build: הסקיל הראשון שלך</h1>
+      <p class="subtitle">3 שלבים. כל שלב = קובץ MD.</p>
+      <div class="tree" style="max-width: 560px;"><span class="folder">skills/&lt;my-skill&gt;/</span>
+├── <span class="file">SKILL.md</span>              <span class="comment">← הגדרה</span>
+├── <span class="folder">stages/</span>
+│   ├── <span class="file">01-research.md</span>    <span class="comment">← מה לחקור</span>
+│   ├── <span class="file">02-process.md</span>     <span class="comment">← איך לעבד</span>
+│   └── <span class="file">03-output.md</span>      <span class="comment">← מה ליצור</span></div>
+      <p style="margin-top: 18px; font-size: 1rem; color: var(--text-muted);">
+        רוב הסקילים שלי = 3 שלבים. יותר = שובר. פחות = רדוד.
+      </p>
+    </div>
+
+    <!-- SLIDE 27: RUN -->
+    <div class="slide" data-slide="27">
+      <span class="time-marker">⏱ דקה 115-118</span>
+      <h1>הריצה הראשונה — <span class="green">זה עובד!</span></h1>
+      <div class="terminal" style="max-width: 680px;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">claude code</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="prompt">&gt;</span> Run the &lt;skill-name&gt; skill</div>
+          <div style="margin-top: 12px;"><span class="comment"># Cloud Code:</span></div>
+          <div><span class="comment">  → Read core/soul.md, memory.md, icp.md</span></div>
+          <div><span class="comment">  → Read agents/&lt;name&gt;.md</span></div>
+          <div><span class="comment">  → Read skills/&lt;skill&gt;/ + 3 stages</span></div>
+          <div><span class="comment">  → Execute</span></div>
+          <div style="margin-top: 8px;"><span class="highlight">  ✓ Created outputs/2026-04-30-&lt;skill&gt;.md</span></div>
+        </div>
+      </div>
+      <p style="margin-top: 22px; font-size: 1.1rem;">
+        פתחו את ה-output ב-Obsidian. <strong>נוצר עכשיו ספציפית עבורכם.</strong>
+      </p>
+    </div>
+
+    <!-- SLIDE 28: WIN 3 -->
+    <div class="slide" data-slide="28">
+      <div class="win-banner" style="background: linear-gradient(135deg, var(--blue-soft), var(--green-soft));">
+        <div class="win-icon">🔵</div>
+        <h2 style="color: var(--blue);">Win Moment 3 · דקה 118</h2>
+        <p style="font-size: 1.3rem; font-weight: 700;">צילום של ה-output → קבוצה</p>
+      </div>
+      <p style="margin-top: 24px; font-size: 1.15rem; font-weight: 700;">מה השגתם בשעתיים:</p>
+      <div class="checklist">
+        <div class="check-item">✅ מוח עם 8 תיקיות</div>
+        <div class="check-item">✅ Soul + Memory + ICP עליכם</div>
+        <div class="check-item">✅ Composio + GitHub</div>
+        <div class="check-item">✅ Agent ראשון שעונה לכם</div>
+        <div class="check-item">✅ Skill ראשון שמייצר output</div>
+        <div class="check-item">✅ Output File Pattern עובד</div>
+      </div>
+      <p style="margin-top: 18px; font-size: 1.1rem; color: var(--text-muted);">
+        זו <strong>תשתית</strong>. לא Demo.
+      </p>
+    </div>
+
+    <!-- SLIDE 29: DAY-AFTER -->
+    <div class="slide" data-slide="29">
+      <h1>Day-After: <span class="accent">שגרת 5 דקות</span></h1>
+      <div class="card-grid-3" style="max-width: 960px;">
+        <div class="card accent">
+          <span class="icon">🌅</span>
+          <h3>בוקר · 3 דקות</h3>
+          <p><code class="mono">Run morning-brief</code><br>יומן + מיילים + משימות</p>
+        </div>
+        <div class="card blue">
+          <span class="icon">🌙</span>
+          <h3>ערב · 2 דקות</h3>
+          <p>מה למדתי? · החלטה?<br>עדכון memory</p>
+        </div>
+        <div class="card green">
+          <span class="icon">📅</span>
+          <h3>שבועי · 10 דקות</h3>
+          <p><code class="mono">Run weekly-review</code><br>סיכום + אופטימיזציה</p>
+        </div>
+      </div>
+      <p style="margin-top: 24px; font-size: 1.05rem;">
+        🔁 כל שינוי = git commit אוטומטי
+      </p>
+    </div>
+
+    <!-- SLIDE 30: MONTH AHEAD -->
+    <div class="slide" data-slide="30">
+      <h1>החודש הקרוב</h1>
+      <p class="subtitle">שעתיים זה הבסיס. החודש זה איפה זה הופך לחיים.</p>
+      <div class="card-grid-2" style="max-width: 760px;">
+        <div class="card">
+          <span class="icon">🤝</span>
+          <h3>חודש ליווי 1:1</h3>
+          <p>בוואטסאפ עם יובל · כל שאלה · כל תקלה · בניית סוכן/סקיל נוסף</p>
+        </div>
+        <div class="card">
+          <span class="icon">📚</span>
+          <h3>קבוצת בוגרים</h3>
+          <p>100+ אנשים שבונים מוחות · שיתוף סקילים · כלים חדשים</p>
+        </div>
+        <div class="card accent">
+          <span class="icon">🎁</span>
+          <h3>Bonus</h3>
+          <p>Web Clipper · Vercel deploy · 5 סקילים נוספים</p>
+        </div>
+        <div class="card green">
+          <span class="icon">🚀</span>
+          <h3>המטרה</h3>
+          <p>בסוף החודש — המוח שלך עובד בלעדיך, יומיים בשבוע</p>
+        </div>
+      </div>
+      <p style="margin-top: 30px; font-size: 1.3rem; font-weight: 800; color: var(--accent);">
+        המוח שלך = ה-CV החדש שלך
+      </p>
+      <p style="margin-top: 14px; font-size: 0.95rem; color: var(--text-muted);">תודה רבה לכם. נשארנו בקשר.</p>
+    </div>
+
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+    let current = 0;
+
+    function show(i) {
+      if (i < 0 || i >= slides.length) return;
+      slides[current].classList.remove('active');
+      slides[i].classList.add('active');
+      current = i;
+      counter.textContent = `${i + 1} / ${slides.length}`;
+      progress.style.width = `${((i + 1) / slides.length) * 100}%`;
+      slides[i].scrollTop = 0;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') show(current - 1);
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(current + 1);
+      else if (e.key === ' ') { e.preventDefault(); show(current + 1); }
+      else if (e.key === 'Home') show(0);
+      else if (e.key === 'End') show(slides.length - 1);
+    });
+
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) {
+        if (dx < 0) show(current - 1);
+        else show(current + 1);
+      }
+    });
+
+    show(0);
+  </script>
 </body>
 </html>
